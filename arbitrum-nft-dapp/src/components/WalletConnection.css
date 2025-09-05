@@ -1,0 +1,26 @@
+.wallet-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.wallet-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+}
+
+.wallet-info p {
+  margin: 0.5rem 0;
+  color: #f1f5f9;
+}
+
+.wallet-info strong {
+  color: #60a5fa;
+  font-weight: 600;
+}

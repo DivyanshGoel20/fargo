@@ -4,7 +4,7 @@ import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { config } from './wagmi';
 import { WalletConnection } from './components/WalletConnection';
-import { NFTGallery } from './components/NFTGallery';
+import { HomePage } from './components/HomePage';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -18,8 +18,8 @@ function App() {
             <header className="App-header">
               <div className="header-content">
                 <div className="title-section">
-                  <h1>Arbitrum NFT dApp</h1>
-                  <p>Connect your wallet to get started</p>
+                  <h1>AI NFT Generator</h1>
+                  <p>Transform your NFTs with AI</p>
                 </div>
                 <div className="wallet-section-header">
                   <WalletConnection />
@@ -27,7 +27,7 @@ function App() {
               </div>
             </header>
             <main className="App-main">
-              <NFTGallery />
+              <HomePage />
             </main>
           </div>
         </RainbowKitProvider>

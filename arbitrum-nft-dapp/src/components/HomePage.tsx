@@ -1,7 +1,24 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { ImageGenerationPage } from '../pages/ImageGenerationPage';
+import { VideoGenerationPage } from '../pages/VideoGenerationPage';
+import { MusicGenerationPage } from '../pages/MusicGenerationPage';
 import './HomePage.css';
 
 export function HomePage() {
+  const [currentPage, setCurrentPage] = useState('home');
+
+  if (currentPage === 'image') {
+    return <ImageGenerationPage onBack={() => setCurrentPage('home')} />;
+  }
+  
+  if (currentPage === 'video') {
+    return <VideoGenerationPage onBack={() => setCurrentPage('home')} />;
+  }
+  
+  if (currentPage === 'music') {
+    return <MusicGenerationPage onBack={() => setCurrentPage('home')} />;
+  }
+
   return (
     <div className="homepage">
       <div className="hero-section">
@@ -10,7 +27,7 @@ export function HomePage() {
       </div>
       
       <div className="options-grid">
-        <Link to="/generate/image" className="option-card image-card">
+        <div className="option-card image-card" onClick={() => setCurrentPage('image')}>
           <div className="card-icon">🎨</div>
           <h2>AI Images</h2>
           <p>Generate stunning images inspired by your NFTs using advanced AI</p>
@@ -19,9 +36,9 @@ export function HomePage() {
             <span>• Art Generation</span>
             <span>• High Resolution</span>
           </div>
-        </Link>
+        </div>
 
-        <Link to="/generate/video" className="option-card video-card">
+        <div className="option-card video-card" onClick={() => setCurrentPage('video')}>
           <div className="card-icon">🎬</div>
           <h2>AI Videos</h2>
           <p>Create dynamic videos and animations from your NFT collection</p>
@@ -30,9 +47,9 @@ export function HomePage() {
             <span>• Animation</span>
             <span>• 4K Quality</span>
           </div>
-        </Link>
+        </div>
 
-        <Link to="/generate/music" className="option-card music-card">
+        <div className="option-card music-card" onClick={() => setCurrentPage('music')}>
           <div className="card-icon">🎵</div>
           <h2>AI Music</h2>
           <p>Compose unique music tracks based on your NFT characteristics</p>
@@ -41,29 +58,9 @@ export function HomePage() {
             <span>• Custom Beats</span>
             <span>• High Quality Audio</span>
           </div>
-        </Link>
-      </div>
-
-      <div className="how-it-works">
-        <h2>How It Works</h2>
-        <div className="steps">
-          <div className="step">
-            <div className="step-number">1</div>
-            <h3>Connect Wallet</h3>
-            <p>Connect your wallet to access your NFT collection</p>
-          </div>
-          <div className="step">
-            <div className="step-number">2</div>
-            <h3>Select NFTs</h3>
-            <p>Choose which NFTs you want to use as inspiration</p>
-          </div>
-          <div className="step">
-            <div className="step-number">3</div>
-            <h3>Generate Content</h3>
-            <p>Let AI create amazing content based on your NFTs</p>
-          </div>
         </div>
       </div>
+
     </div>
   );
 }

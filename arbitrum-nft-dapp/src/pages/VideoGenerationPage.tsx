@@ -1,16 +1,19 @@
 import { useAccount } from 'wagmi';
 import { NFTGallery } from '../components/NFTGallery';
-import { Link } from 'react-router-dom';
 import './GenerationPage.css';
 
-export function VideoGenerationPage() {
+interface VideoGenerationPageProps {
+  onBack: () => void;
+}
+
+export function VideoGenerationPage({ onBack }: VideoGenerationPageProps) {
   const { isConnected } = useAccount();
 
   return (
     <div className="generation-page">
       <div className="page-header">
         <div className="breadcrumb">
-          <Link to="/" className="breadcrumb-link">Home</Link>
+          <button onClick={onBack} className="breadcrumb-link">← Back to Home</button>
           <span className="breadcrumb-separator">/</span>
           <span className="breadcrumb-current">AI Videos</span>
         </div>
@@ -34,34 +37,15 @@ export function VideoGenerationPage() {
           </div>
           
           <div className="generation-panel">
-            <h3>AI Video Settings</h3>
-            <div className="settings-grid">
-              <div className="setting-item">
-                <label>Animation Style</label>
-                <select>
-                  <option>Floating</option>
-                  <option>Rotating</option>
-                  <option>Morphing</option>
-                  <option>Particle Effects</option>
-                </select>
-              </div>
-              <div className="setting-item">
-                <label>Duration</label>
-                <select>
-                  <option>5 seconds</option>
-                  <option>10 seconds</option>
-                  <option>15 seconds</option>
-                  <option>30 seconds</option>
-                </select>
-              </div>
-              <div className="setting-item">
-                <label>Quality</label>
-                <select>
-                  <option>720p</option>
-                  <option>1080p</option>
-                  <option>4K</option>
-                </select>
-              </div>
+            <h3>AI Video Generation</h3>
+            <div className="prompt-section">
+              <label htmlFor="video-prompt">Describe the video you want to generate:</label>
+              <textarea
+                id="video-prompt"
+                className="prompt-textarea"
+                placeholder="e.g., A dynamic animation of swirling particles forming a galaxy, with smooth camera movement..."
+                rows={4}
+              />
             </div>
             <button className="generate-button">
               Generate AI Videos

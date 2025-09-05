@@ -1,11 +1,9 @@
 .App {
-  width: 100vw;
+  width: 100%;
   min-height: 100vh;
   color: white;
   display: flex;
   flex-direction: column;
-  margin: 0;
-  padding: 0;
 }
 
 .App-header {
@@ -55,37 +53,9 @@
   margin: 0 auto;
 }
 
-.wallet-section {
-  text-align: center;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 3rem;
-  border-radius: 20px;
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-  width: 100%;
-}
+/* Removed old wallet-section styles - no longer needed */
 
-.wallet-info {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.wallet-info p {
-  margin: 0.75rem 0;
-  font-size: 1rem;
-  color: #f1f5f9;
-}
-
-.wallet-info strong {
-  color: #60a5fa;
-  font-weight: 600;
-}
+/* Wallet info styles - moved to WalletConnection component */
 
 /* NFT Gallery Styles */
 .nft-gallery {

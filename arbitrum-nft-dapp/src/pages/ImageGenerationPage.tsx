@@ -1,16 +1,19 @@
 import { useAccount } from 'wagmi';
 import { NFTGallery } from '../components/NFTGallery';
-import { Link } from 'react-router-dom';
 import './GenerationPage.css';
 
-export function ImageGenerationPage() {
+interface ImageGenerationPageProps {
+  onBack: () => void;
+}
+
+export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
   const { isConnected } = useAccount();
 
   return (
     <div className="generation-page">
       <div className="page-header">
         <div className="breadcrumb">
-          <Link to="/" className="breadcrumb-link">Home</Link>
+          <button onClick={onBack} className="breadcrumb-link">← Back to Home</button>
           <span className="breadcrumb-separator">/</span>
           <span className="breadcrumb-current">AI Images</span>
         </div>
@@ -34,33 +37,15 @@ export function ImageGenerationPage() {
           </div>
           
           <div className="generation-panel">
-            <h3>AI Image Settings</h3>
-            <div className="settings-grid">
-              <div className="setting-item">
-                <label>Style</label>
-                <select>
-                  <option>Realistic</option>
-                  <option>Artistic</option>
-                  <option>Abstract</option>
-                  <option>Cartoon</option>
-                </select>
-              </div>
-              <div className="setting-item">
-                <label>Resolution</label>
-                <select>
-                  <option>1024x1024</option>
-                  <option>2048x2048</option>
-                  <option>4096x4096</option>
-                </select>
-              </div>
-              <div className="setting-item">
-                <label>Quality</label>
-                <select>
-                  <option>Standard</option>
-                  <option>High</option>
-                  <option>Ultra</option>
-                </select>
-              </div>
+            <h3>AI Image Generation</h3>
+            <div className="prompt-section">
+              <label htmlFor="image-prompt">Describe the image you want to generate:</label>
+              <textarea
+                id="image-prompt"
+                className="prompt-textarea"
+                placeholder="e.g., A futuristic cityscape with neon lights, inspired by cyberpunk aesthetics..."
+                rows={4}
+              />
             </div>
             <button className="generate-button">
               Generate AI Images
