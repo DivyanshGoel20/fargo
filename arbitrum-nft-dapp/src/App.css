@@ -119,6 +119,52 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
+/* NFT Selection Styles */
+.nft-card.selectable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nft-card.selectable:hover {
+  border-color: rgba(96, 165, 250, 0.5);
+  transform: translateY(-3px);
+}
+
+.nft-card.selected {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.nft-checkbox {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+}
+
+.checkbox-input {
+  width: 20px;
+  height: 20px;
+  accent-color: #60a5fa;
+  cursor: pointer;
+}
+
+.selection-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.selected-count {
+  background: rgba(96, 165, 250, 0.2);
+  color: #60a5fa;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
 .nft-image {
   width: 100%;
   height: 200px;
