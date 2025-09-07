@@ -19,14 +19,14 @@ interface NFT {
 }
 
 export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [selectedNFTs, setSelectedNFTs] = useState<NFT[]>([]);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isGenerateDisabled = !prompt.trim() || selectedNFTs.length === 0 || isGenerating;
+  const isGenerateDisabled = !prompt.trim() || isGenerating;
 
   const handleGenerateImage = async () => {
     if (isGenerateDisabled) return;
@@ -44,7 +44,7 @@ export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
     setGeneratedImage(null);
 
     try {
-      const imageUrls = selectedNFTs.map(nft => nft.image_url);
+      const imageUrls = selectedNFTs.length > 0 ? selectedNFTs.map(nft => nft.image_url) : [];
       
       console.log('Sending request to backend API...');
       const response = await fetch('http://localhost:3001/api/generate-image', {
@@ -54,7 +54,8 @@ export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
         },
         body: JSON.stringify({
           prompt: prompt.trim(),
-          imageUrls: imageUrls
+          imageUrls: imageUrls,
+          walletAddress: address
         })
       });
 
@@ -205,7 +206,7 @@ export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
             
             {selectedNFTs.length === 0 && (
               <p className="validation-message">
-                Please select at least one NFT to use as inspiration
+                💡 Optional: Select NFTs to use as inspiration for your generated image
               </p>
             )}
           </div>

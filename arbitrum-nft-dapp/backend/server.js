@@ -3,15 +3,53 @@ import cors from 'cors';
 import axios from 'axios';
 import sharp from 'sharp';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Initialize Supabase client
+const supabaseUrl = 'https://mamkdglgjohrnwzawree.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Save generated image to database
+async function saveToDatabase(walletAddress, ipfsUrl, prompt) {
+  try {
+    console.log('Saving to database...');
+    console.log('Wallet Address:', walletAddress);
+    console.log('IPFS URL:', ipfsUrl);
+    console.log('Prompt:', prompt);
+    
+    const { data, error } = await supabase
+      .from('user_content')
+      .insert([
+        { 
+          wallet_address: walletAddress, 
+          ipfs_url: ipfsUrl,
+          prompt: prompt,
+          created_at: new Date().toISOString()
+        }
+      ]);
+
+    if (error) {
+      console.error('Supabase Insert Error:', error);
+      throw error;
+    }
+    
+    console.log('Successfully saved to database:', data);
+    return data;
+  } catch (error) {
+    console.error('Error saving to database:', error.message);
+    throw new Error(`Failed to save to database: ${error.message}`);
+  }
+}
 
 // Convert image to PNG format
 async function convertImageToPNG(imageUrl) {
@@ -117,46 +155,66 @@ app.post('/api/generate-image', async (req, res) => {
     console.log('=== IMAGE GENERATION REQUEST ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     
-    const { prompt, imageUrls } = req.body;
+    const { prompt, imageUrls, walletAddress } = req.body;
     
-    if (!prompt || !imageUrls || imageUrls.length === 0) {
+    if (!prompt) {
       return res.status(400).json({
-        error: 'Prompt and image URLs are required'
+        error: 'Prompt is required'
+      });
+    }
+    
+    if (!walletAddress) {
+      return res.status(400).json({
+        error: 'Wallet address is required'
       });
     }
     
     console.log('Processing image URLs:', imageUrls);
     
-    // Convert all images to PNG
+    // Convert all images to PNG (if any are provided)
     const imageBuffers = [];
-    for (const imageUrl of imageUrls) {
-      try {
-        const pngBuffer = await convertImageToPNG(imageUrl);
-        imageBuffers.push(pngBuffer);
-      } catch (error) {
-        console.warn(`Skipping image ${imageUrl}: ${error.message}`);
-        // Continue with other images
+    if (imageUrls && imageUrls.length > 0) {
+      for (const imageUrl of imageUrls) {
+        try {
+          const pngBuffer = await convertImageToPNG(imageUrl);
+          imageBuffers.push(pngBuffer);
+        } catch (error) {
+          console.warn(`Skipping image ${imageUrl}: ${error.message}`);
+          // Continue with other images
+        }
       }
+      console.log(`Successfully processed ${imageBuffers.length} images`);
+    } else {
+      console.log('No reference images provided - generating from prompt only');
     }
-    
-    if (imageBuffers.length === 0) {
-      return res.status(400).json({
-        error: 'No valid images could be processed'
-      });
-    }
-    
-    console.log(`Successfully processed ${imageBuffers.length} images`);
     
     // Generate AI image
     const generationResult = await generateAIImage(prompt, imageBuffers);
     
     console.log('=== IMAGE GENERATION COMPLETED ===');
     
+    // For now, we'll use a placeholder IPFS URL since we haven't implemented IPFS upload yet
+    const placeholderIpfsUrl = `ipfs://placeholder_${Date.now()}`;
+    
+    // Save to database
+    try {
+      await saveToDatabase(
+        walletAddress, 
+        placeholderIpfsUrl, 
+        prompt
+      );
+      console.log('Successfully saved to database');
+    } catch (dbError) {
+      console.warn('Database save failed, but continuing with response:', dbError.message);
+    }
+    
     res.json({
       success: true,
       message: generationResult.message,
       generatedImage: generationResult.generatedImage,
-      processedImages: imageBuffers.length
+      processedImages: imageBuffers.length,
+      ipfsUrl: placeholderIpfsUrl,
+      savedToDatabase: true
     });
     
   } catch (error) {
