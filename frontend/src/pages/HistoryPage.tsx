@@ -31,7 +31,7 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`http://localhost:3001/api/history/${address}`);
+        const res = await fetch(`https://fargo-jkcv.onrender.com/api/history/${address}`);
         if (!res.ok) throw new Error('Failed to fetch history');
         const data = await res.json();
         setItems(data.items || []);
@@ -116,7 +116,7 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
     setError(null);
     setMetadataUrl(null);
     try {
-      const res = await fetch('http://localhost:3001/api/metadata', {
+      const res = await fetch('https://fargo-jkcv.onrender.com/api/metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), description: description.trim(), image: imageUrl })
