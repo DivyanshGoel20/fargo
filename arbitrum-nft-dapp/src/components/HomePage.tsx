@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { ImageGenerationPage } from '../pages/ImageGenerationPage';
 import { HistoryPage } from '../pages/HistoryPage';
-import { AvatarGenerationPage } from '../pages/AvatarGenerationPage';
 import './HomePage.css';
 
 export function HomePage() {
@@ -11,8 +10,13 @@ export function HomePage() {
     return <ImageGenerationPage onBack={() => setCurrentPage('home')} />;
   }
   
-  if (currentPage === 'music') {
-    return <AvatarGenerationPage onBack={() => setCurrentPage('home')} />;
+  if (currentPage === 'avatar') {
+    const Creator = lazy(() => import('../pages/AvatarCreatorPage'));
+    return (
+      <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'white' }}>Loading Character Builder…</div>}>
+        <Creator onBack={() => setCurrentPage('home')} />
+      </Suspense>
+    );
   }
   
   if (currentPage === 'history') {
@@ -23,7 +27,7 @@ export function HomePage() {
     <div className="homepage">
       <div className="hero-section">
         <h1>AI-Powered NFT Generator</h1>
-        <p>Transform your NFTs into AI-generated images and music</p>
+        <p>Transform your NFTs into AI-generated images and 3D characters</p>
       </div>
       
       <div className="options-grid">
@@ -38,7 +42,7 @@ export function HomePage() {
           </div>
         </div>
 
-        <div className="option-card music-card" onClick={() => setCurrentPage('music')}>
+        <div className="option-card avatar-card" onClick={() => setCurrentPage('avatar')}>
           <div className="card-icon">🧍</div>
           <h2>3D Characters</h2>
           <p>Create and export your Ready Player Me avatar</p>
@@ -64,3 +68,6 @@ export function HomePage() {
     </div>
   );
 }
+
+// Local component to handle creator -> viewer transition without introducing global routing
+// removed AvatarRoute; creator is a single-step now per user request

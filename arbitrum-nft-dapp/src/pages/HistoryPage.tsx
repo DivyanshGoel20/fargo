@@ -12,6 +12,7 @@ interface HistoryItem {
   ipfsUrl: string;
   cid: string;
   gatewayUrl: string | null;
+  accessUrl?: string | null;
   prompt: string;
   createdAt: string;
 }
@@ -73,8 +74,8 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
               {items.map((item) => (
                 <div key={item.id} className="generated-image-container" style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '1rem', alignItems: 'start' }}>
                   <div style={{ width: '240px' }}>
-                    {item.gatewayUrl ? (
-                      <img src={item.gatewayUrl} alt={item.prompt} className="generated-image" style={{ maxHeight: '240px', objectFit: 'cover' }} />
+                    {item.accessUrl || item.gatewayUrl ? (
+                      <img src={item.accessUrl || item.gatewayUrl as string} alt={item.prompt} className="generated-image" style={{ maxHeight: '240px', objectFit: 'cover' }} />
                     ) : (
                       <div style={{ height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>Image unavailable</div>
                     )}

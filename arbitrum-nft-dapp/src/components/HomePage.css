@@ -130,12 +130,12 @@
 }
 
 
-.music-card {
+.avatar-card {
   border-top: 4px solid #10b981;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(15, 23, 42, 0.9));
 }
 
-.music-card:hover {
+.avatar-card:hover {
   border-color: #10b981;
   box-shadow: 0 25px 50px rgba(16, 185, 129, 0.2);
 }

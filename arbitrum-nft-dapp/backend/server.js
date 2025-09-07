@@ -333,19 +333,41 @@ app.get('/api/history/:walletAddress', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch history' });
     }
 
-    const items = (data || []).map((row) => {
-      const cid = cidFromIpfsUrl(row.ipfs_url);
-      const gatewayUrl = toGatewayUrlFromIpfs(row.ipfs_url);
-      return {
-        id: row.id,
-        walletAddress: row.wallet_address,
-        ipfsUrl: row.ipfs_url,
-        cid,
-        gatewayUrl,
-        prompt: row.prompt,
-        createdAt: row.created_at,
-      };
-    });
+    // For each row, generate a 5-minute private access link via Pinata if CID exists
+    console.log('[HISTORY] Rows fetched:', (data || []).length);
+    const items = await Promise.all(
+      (data || []).map(async (row) => {
+        const cid = cidFromIpfsUrl(row.ipfs_url);
+        const gatewayUrl = toGatewayUrlFromIpfs(row.ipfs_url);
+        console.log('[HISTORY] Row ID:', row.id, 'Wallet:', row.wallet_address);
+        console.log('  ipfs_url:', row.ipfs_url);
+        console.log('  parsed CID:', cid);
+        console.log('  static gatewayUrl:', gatewayUrl);
+        let accessUrl = null;
+        if (cid) {
+          try {
+            // console.log('  Using pinata.gateways.private.createAccessLink for CID:', cid);
+            //   const link = await pinata.gateways.createAccessLink({ cid, expires: 300 });
+            //   accessUrl = link;
+            //   console.log('  access link created:', accessUrl);
+              console.log('  access link:', pinata.gateways);
+          } catch (e) {
+            console.warn('  Failed to create access/convert link for CID', cid, e?.message || e);
+          }
+        }
+        console.log('  final URLs => accessUrl:', accessUrl, '; gatewayUrl:', gatewayUrl);
+        return {
+          id: row.id,
+          walletAddress: row.wallet_address,
+          ipfsUrl: row.ipfs_url,
+          cid,
+          gatewayUrl,
+          accessUrl,
+          prompt: row.prompt,
+          createdAt: row.created_at,
+        };
+      })
+    );
 
     res.json({ success: true, items });
   } catch (err) {

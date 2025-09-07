@@ -12,6 +12,7 @@
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.8",
     "@tanstack/react-query": "^5.86.0",
+    "@readyplayerme/visage": "^1.10.0",
     "@readyplayerme/react-avatar-creator": "^1.0.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
