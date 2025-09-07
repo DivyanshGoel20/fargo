@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ImageGenerationPage } from '../pages/ImageGenerationPage';
-import { VideoGenerationPage } from '../pages/VideoGenerationPage';
 import { MusicGenerationPage } from '../pages/MusicGenerationPage';
 import './HomePage.css';
 
@@ -11,10 +10,6 @@ export function HomePage() {
     return <ImageGenerationPage onBack={() => setCurrentPage('home')} />;
   }
   
-  if (currentPage === 'video') {
-    return <VideoGenerationPage onBack={() => setCurrentPage('home')} />;
-  }
-  
   if (currentPage === 'music') {
     return <MusicGenerationPage onBack={() => setCurrentPage('home')} />;
   }
@@ -23,7 +18,7 @@ export function HomePage() {
     <div className="homepage">
       <div className="hero-section">
         <h1>AI-Powered NFT Generator</h1>
-        <p>Transform your NFTs into AI-generated images, videos, and music</p>
+        <p>Transform your NFTs into AI-generated images and music</p>
       </div>
       
       <div className="options-grid">
@@ -35,17 +30,6 @@ export function HomePage() {
             <span>• Style Transfer</span>
             <span>• Art Generation</span>
             <span>• High Resolution</span>
-          </div>
-        </div>
-
-        <div className="option-card video-card" onClick={() => setCurrentPage('video')}>
-          <div className="card-icon">🎬</div>
-          <h2>AI Videos</h2>
-          <p>Create dynamic videos and animations from your NFT collection</p>
-          <div className="card-features">
-            <span>• Motion Graphics</span>
-            <span>• Animation</span>
-            <span>• 4K Quality</span>
           </div>
         </div>
 

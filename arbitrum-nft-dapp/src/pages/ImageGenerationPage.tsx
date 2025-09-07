@@ -22,6 +22,110 @@ export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
   const { isConnected } = useAccount();
   const [selectedNFTs, setSelectedNFTs] = useState<NFT[]>([]);
   const [prompt, setPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const isGenerateDisabled = !prompt.trim() || selectedNFTs.length === 0 || isGenerating;
+
+  const handleGenerateImage = async () => {
+    if (isGenerateDisabled) return;
+
+    console.log('=== STARTING AI IMAGE GENERATION ===');
+    console.log('Selected NFTs:', selectedNFTs);
+    console.log('Prompt:', prompt);
+    console.log('Image URLs:');
+    selectedNFTs.forEach((nft, index) => {
+      console.log(`${index + 1}. ${nft.name || `#${nft.identifier}`}: ${nft.image_url}`);
+    });
+
+    setIsGenerating(true);
+    setError(null);
+    setGeneratedImage(null);
+
+    try {
+      const imageUrls = selectedNFTs.map(nft => nft.image_url);
+      
+      console.log('Sending request to backend API...');
+      const response = await fetch('http://localhost:3001/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          imageUrls: imageUrls
+        })
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate image');
+      }
+
+      const data = await response.json();
+      console.log('Generation response:', data);
+      
+      if (data.success) {
+        setGeneratedImage(data.generatedImage);
+        console.log('Image generated successfully!');
+      } else {
+        throw new Error(data.message || 'Generation failed');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      console.error('Error generating image:', errorMessage);
+      setError(errorMessage);
+    } finally {
+      setIsGenerating(false);
+      console.log('=== AI IMAGE GENERATION COMPLETED ===');
+    }
+  };
+
+  // If we have a generated image, show the results page
+  if (generatedImage) {
+    return (
+      <div className="generation-page">
+        <div className="page-header">
+          <div className="breadcrumb">
+            <button onClick={() => setGeneratedImage(null)} className="breadcrumb-link">← Back to Generation</button>
+            <span className="breadcrumb-separator">/</span>
+            <span className="breadcrumb-current">Generated Image</span>
+          </div>
+          <h1>Generated AI Image</h1>
+          <p>Your AI-generated image is ready!</p>
+        </div>
+        
+        <div className="content-section">
+          <div className="result-container">
+            <div className="generated-image-container">
+              <img 
+                src={generatedImage} 
+                alt="Generated AI Image" 
+                className="generated-image"
+              />
+            </div>
+            <div className="result-actions">
+              <button 
+                className="generate-button"
+                onClick={() => setGeneratedImage(null)}
+              >
+                Generate Another Image
+              </button>
+              <button 
+                className="secondary-button"
+                onClick={onBack}
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="generation-page">
@@ -66,21 +170,44 @@ export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
                 onChange={(e) => setPrompt(e.target.value)}
               />
             </div>
+            {error && (
+              <div className="error-message">
+                <p>❌ {error}</p>
+                <button 
+                  className="retry-button"
+                  onClick={() => setError(null)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+            
             <button 
-              className="generate-button"
-              onClick={() => {
-                console.log('=== AI IMAGE GENERATION ===');
-                console.log('Selected NFTs:', selectedNFTs);
-                console.log('Prompt:', prompt);
-                console.log('Image URLs:');
-                selectedNFTs.forEach((nft, index) => {
-                  console.log(`${index + 1}. ${nft.name || `#${nft.identifier}`}: ${nft.image_url}`);
-                });
-                console.log('========================');
-              }}
+              className={`generate-button ${isGenerateDisabled ? 'disabled' : ''}`}
+              onClick={handleGenerateImage}
+              disabled={isGenerateDisabled}
             >
-              Generate AI Images
+              {isGenerating ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Generating AI Image...
+                </>
+              ) : (
+                'Generate AI Images'
+              )}
             </button>
+            
+            {!prompt.trim() && (
+              <p className="validation-message">
+                Please enter a prompt to describe the image you want to generate
+              </p>
+            )}
+            
+            {selectedNFTs.length === 0 && (
+              <p className="validation-message">
+                Please select at least one NFT to use as inspiration
+              </p>
+            )}
           </div>
         </div>
       )}
