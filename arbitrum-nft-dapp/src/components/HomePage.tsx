@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ImageGenerationPage } from '../pages/ImageGenerationPage';
+import { HistoryPage } from '../pages/HistoryPage';
 import { MusicGenerationPage } from '../pages/MusicGenerationPage';
 import './HomePage.css';
 
@@ -12,6 +13,10 @@ export function HomePage() {
   
   if (currentPage === 'music') {
     return <MusicGenerationPage onBack={() => setCurrentPage('home')} />;
+  }
+  
+  if (currentPage === 'history') {
+    return <HistoryPage onBack={() => setCurrentPage('home')} />;
   }
 
   return (
@@ -41,6 +46,17 @@ export function HomePage() {
             <span>• Genre Mixing</span>
             <span>• Custom Beats</span>
             <span>• High Quality Audio</span>
+          </div>
+        </div>
+
+        <div className="option-card image-card" onClick={() => setCurrentPage('history')}>
+          <div className="card-icon">🗂️</div>
+          <h2>Recent Works</h2>
+          <p>Browse your generated images and prompts</p>
+          <div className="card-features">
+            <span>• View History</span>
+            <span>• Open via Gateway</span>
+            <span>• Mint (soon)</span>
           </div>
         </div>
       </div>

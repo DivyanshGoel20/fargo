@@ -17,14 +17,28 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Initialize Pinata client
+const PINATA_GATEWAY_HOST = "coral-official-penguin-262.mypinata.cloud";
 const pinata = new PinataSDK({
   pinataJwt: process.env.PINATA_JWT,
-  pinataGateway: "coral-official-penguin-262.mypinata.cloud",
+  pinataGateway: PINATA_GATEWAY_HOST,
 });
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+function cidFromIpfsUrl(ipfsUrl) {
+  if (!ipfsUrl) return null;
+  // Supports formats like ipfs://<cid> or /ipfs/<cid> or raw cid
+  if (ipfsUrl.startsWith('ipfs://')) return ipfsUrl.replace('ipfs://', '');
+  if (ipfsUrl.includes('/ipfs/')) return ipfsUrl.split('/ipfs/')[1];
+  return ipfsUrl;
+}
+
+function toGatewayUrlFromIpfs(ipfsUrl) {
+  const cid = cidFromIpfsUrl(ipfsUrl);
+  return cid ? `https://${PINATA_GATEWAY_HOST}/ipfs/${cid}` : null;
+}
 
 // Upload file to IPFS using Pinata
 async function uploadToIPFS(fileBuffer, fileName, mimeType) {
@@ -33,25 +47,33 @@ async function uploadToIPFS(fileBuffer, fileName, mimeType) {
     console.log(`File size: ${fileBuffer.length} bytes`);
     console.log(`MIME type: ${mimeType}`);
     
-    // Create a File object from the buffer
-    const file = new File([fileBuffer], fileName, { type: mimeType });
+    // Prefer uploading Buffer directly via Blob->File fallback as per Pinata docs
+    // Some Node environments don't expose global File.
+    // Use SDK's upload.file (defaults to public network)
+    const blob = new Blob([fileBuffer], { type: mimeType });
+    const upload = await pinata.upload.file(blob, { fileName });
     
-    // Upload to Pinata
-    const upload = await pinata.upload.public.file(file);
+    // Pinata SDK returns an object with a `cid`
+    const cid = upload?.cid || upload?.IpfsHash || upload?.id; // try common fields
+    if (!cid) {
+      console.error('Unexpected Pinata response:', upload);
+      throw new Error('Pinata upload response missing cid');
+    }
+    const ipfsUrl = `ipfs://${cid}`;
+    const gatewayUrl = `https://${PINATA_GATEWAY_HOST}/ipfs/${cid}`;
     
-    console.log('IPFS upload successful:', upload);
-    console.log('IPFS Hash:', upload.IpfsHash);
-    console.log('IPFS URL:', `ipfs://${upload.IpfsHash}`);
+    console.log('IPFS upload successful:', { cid, ipfsUrl, gatewayUrl });
     
     return {
       success: true,
-      ipfsHash: upload.IpfsHash,
-      ipfsUrl: `ipfs://${upload.IpfsHash}`,
-      gatewayUrl: `https://coral-official-penguin-262.mypinata.cloud/ipfs/${upload.IpfsHash}`
+      ipfsHash: cid,
+      ipfsUrl,
+      gatewayUrl
     };
   } catch (error) {
-    console.error('Error uploading to IPFS:', error.message);
-    throw new Error(`Failed to upload to IPFS: ${error.message}`);
+    const message = error?.message || String(error);
+    console.error('Error uploading to IPFS:', message);
+    throw new Error(`Failed to upload to IPFS: ${message}`);
   }
 }
 
@@ -63,8 +85,12 @@ async function saveToDatabase(walletAddress, ipfsUrl, prompt) {
     console.log('IPFS URL:', ipfsUrl);
     console.log('Prompt:', prompt);
     
+    // Check if the table exists first
+    const tableName = process.env.SUPABASE_TABLE_NAME || 'AI Generated';
+    console.log(`Attempting to save to table: ${tableName}`);
+    
     const { data, error } = await supabase
-      .from('user_content')
+      .from(tableName)
       .insert([
         { 
           wallet_address: walletAddress, 
@@ -76,6 +102,7 @@ async function saveToDatabase(walletAddress, ipfsUrl, prompt) {
 
     if (error) {
       console.error('Supabase Insert Error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       throw error;
     }
     
@@ -232,6 +259,7 @@ app.post('/api/generate-image', async (req, res) => {
     
     let ipfsResult = null;
     let ipfsUrl = `ipfs://placeholder_${Date.now()}`;
+    let gatewayUrl = null;
     
     // Upload generated image to IPFS if we have image data
     if (generationResult.imageBuffer) {
@@ -240,7 +268,8 @@ app.post('/api/generate-image', async (req, res) => {
         const fileName = `ai-generated-${Date.now()}.png`;
         ipfsResult = await uploadToIPFS(generationResult.imageBuffer, fileName, 'image/png');
         ipfsUrl = ipfsResult.ipfsUrl;
-        console.log('IPFS upload successful:', ipfsUrl);
+        gatewayUrl = ipfsResult.gatewayUrl;
+        console.log('IPFS upload successful:', { ipfsUrl, gatewayUrl });
       } catch (ipfsError) {
         console.warn('IPFS upload failed, using placeholder:', ipfsError.message);
       }
@@ -263,9 +292,9 @@ app.post('/api/generate-image', async (req, res) => {
       message: generationResult.message,
       generatedImage: generationResult.generatedImage,
       processedImages: imageBuffers.length,
-      ipfsUrl: ipfsUrl,
+      ipfsUrl,
       ipfsHash: ipfsResult?.ipfsHash || null,
-      gatewayUrl: ipfsResult?.gatewayUrl || null,
+      gatewayUrl,
       savedToDatabase: true
     });
     
@@ -281,6 +310,48 @@ app.post('/api/generate-image', async (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'AI Image Generation API is running' });
+});
+
+// Fetch a user's generation history
+app.get('/api/history/:walletAddress', async (req, res) => {
+  try {
+    const walletAddress = req.params.walletAddress;
+    if (!walletAddress) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+
+    const tableName = process.env.SUPABASE_TABLE_NAME || 'AI Generated';
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('id, wallet_address, ipfs_url, prompt, created_at')
+      .eq('wallet_address', walletAddress)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Supabase Select Error:', error);
+      return res.status(500).json({ error: 'Failed to fetch history' });
+    }
+
+    const items = (data || []).map((row) => {
+      const cid = cidFromIpfsUrl(row.ipfs_url);
+      const gatewayUrl = toGatewayUrlFromIpfs(row.ipfs_url);
+      return {
+        id: row.id,
+        walletAddress: row.wallet_address,
+        ipfsUrl: row.ipfs_url,
+        cid,
+        gatewayUrl,
+        prompt: row.prompt,
+        createdAt: row.created_at,
+      };
+    });
+
+    res.json({ success: true, items });
+  } catch (err) {
+    console.error('Error fetching history:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.listen(PORT, () => {
