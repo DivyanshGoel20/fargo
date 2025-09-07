@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
+import { arbitrum } from 'wagmi/chains';
 import { useAccount } from 'wagmi';
 import './GenerationPage.css';
 
@@ -81,12 +83,8 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
                     )}
                   </div>
                   <div>
-                    <div style={{ color: '#cbd5e1', marginBottom: '0.25rem' }}>Prompt</div>
-                    <div style={{ color: 'white', maxHeight: '120px', overflow: 'auto', paddingRight: '0.5rem' }}>{item.prompt}</div>
                     <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-                      <button className="generate-button" style={{ width: 'auto' }} disabled>
-                        Mint (coming soon)
-                      </button>
+                      <MintButton imageUrl={(item.accessUrl || item.gatewayUrl) as string} />
                     </div>
                   </div>
                 </div>
@@ -98,5 +96,106 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
     </div>
   );
 }
+
+// Simple mint modal + metadata uploader
+function MintButton({ imageUrl }: { imageUrl: string }) {
+  const { data: txHash, isPending, writeContract, error: writeError } = useWriteContract();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [metadataUrl, setMetadataUrl] = useState<string | null>(null);
+
+  const onMint = async () => {
+    setLoading(true);
+    setError(null);
+    setMetadataUrl(null);
+    try {
+      const res = await fetch('http://localhost:3001/api/metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), description: description.trim(), image: imageUrl })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Failed to upload metadata');
+      }
+      const data = await res.json();
+      setMetadataUrl(data.ipfsUrl || data.gatewayUrl);
+      console.log('Metadata uploaded:', data);
+      const uri = data.ipfsUrl || data.gatewayUrl;
+      setMetadataUrl(uri);
+      if (chainId !== arbitrum.id) {
+        try { switchChain({ chainId: arbitrum.id }); } catch {}
+        // defer write until user switches manually; show hint
+        alert('Please switch to Arbitrum One to mint. Network switch requested.');
+      } else {
+        try {
+          writeContract({
+            abi: [
+              {
+                "inputs": [ { "internalType": "string", "name": "tokenURI", "type": "string" } ],
+                "name": "mintNFT",
+                "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+              }
+            ],
+            address: '0x5411F7EB719EAA802b4c5F3265f6d4a545663E87',
+            functionName: 'mintNFT',
+            args: [uri]
+          });
+        } catch (e) {
+          console.error('Contract write failed:', e);
+        }
+      }
+      setLoading(false);
+    } catch (e) {
+      setLoading(false);
+      setError(e instanceof Error ? e.message : 'Unknown error');
+    }
+  };
+
+  return (
+    <>
+      <button className="generate-button" style={{ width: 'auto' }} onClick={() => setOpen(true)}>
+        Mint NFT
+      </button>
+      {open && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 50 }}>
+          <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, padding: 20, width: 420, maxWidth: '90%' }}>
+            <h3 style={{ color: 'white', marginBottom: 12 }}>Mint NFT</h3>
+            <div style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 8 }}>Image</div>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8, wordBreak: 'break-all' }}>{imageUrl}</div>
+            <div style={{ color: '#cbd5e1', fontSize: 12, marginTop: 8 }}>Name</div>
+            <input value={name} onChange={(e) => setName(e.target.value)} style={{ width: '100%', padding: 8, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'white' }} />
+            <div style={{ color: '#cbd5e1', fontSize: 12, marginTop: 8 }}>Description</div>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} style={{ width: '100%', padding: 8, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'white' }} />
+            {error && <div style={{ color: '#f87171', marginTop: 8 }}>{error}</div>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+              <button className="secondary-button" onClick={() => setOpen(false)}>Cancel</button>
+              <button className={`generate-button ${loading ? 'disabled' : ''}`} disabled={loading || !name.trim() || !description.trim()} onClick={onMint}>
+                {loading ? 'Uploading…' : 'Upload & Mint'}
+              </button>
+            </div>
+            {metadataUrl && (
+              <div style={{ color: '#cbd5e1', marginTop: 8, wordBreak: 'break-all' }}>Metadata: {metadataUrl}</div>
+            )}
+            {writeError && <div style={{ color: '#f87171', marginTop: 8 }}>Tx error: {String(writeError.message || writeError)}</div>}
+            {isPending && <div style={{ color: '#cbd5e1', marginTop: 8 }}>Waiting for wallet confirmation…</div>}
+            {isConfirming && <div style={{ color: '#cbd5e1', marginTop: 8 }}>Transaction pending…</div>}
+            {isConfirmed && <div style={{ color: '#34d399', marginTop: 8 }}>Mint confirmed!</div>}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 
 

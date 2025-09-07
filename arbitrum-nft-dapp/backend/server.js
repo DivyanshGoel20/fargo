@@ -49,9 +49,9 @@ async function uploadToIPFS(fileBuffer, fileName, mimeType) {
     
     // Prefer uploading Buffer directly via Blob->File fallback as per Pinata docs
     // Some Node environments don't expose global File.
-    // Use SDK's upload.file (defaults to public network)
+    // Use SDK's upload.public.file for public uploads (Pinata V2)
     const blob = new Blob([fileBuffer], { type: mimeType });
-    const upload = await pinata.upload.file(blob, { fileName });
+    const upload = await pinata.upload.public.file(blob, { fileName });
     
     // Pinata SDK returns an object with a `cid`
     const cid = upload?.cid || upload?.IpfsHash || upload?.id; // try common fields
@@ -310,6 +310,46 @@ app.post('/api/generate-image', async (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'AI Image Generation API is running' });
+});
+
+// Upload ERC-721 metadata JSON to IPFS (Public)
+app.post('/api/metadata', async (req, res) => {
+  try {
+    const { name, description, image, attributes } = req.body || {};
+    if (!name || !description || !image) {
+      return res.status(400).json({ error: 'name, description and image are required' });
+    }
+
+    // Basic ERC-721 Metadata JSON
+    const metadata = {
+      name,
+      description,
+      image, // should be an IPFS or gateway URL
+      attributes: Array.isArray(attributes) ? attributes : []
+    };
+
+    const jsonBuffer = Buffer.from(JSON.stringify(metadata, null, 2));
+    const blob = new Blob([jsonBuffer], { type: 'application/json' });
+    const fileName = `${name.replace(/[^a-z0-9-_]/gi, '_') || 'metadata'}.json`;
+
+    console.log('[METADATA] Uploading metadata:', metadata);
+    const upload = await pinata.upload.public.file(blob, { fileName });
+    const cid = upload?.cid || upload?.IpfsHash || upload?.id;
+    if (!cid) {
+      console.error('[METADATA] Unexpected Pinata response:', upload);
+      return res.status(500).json({ error: 'Failed to upload metadata' });
+    }
+
+    const ipfsUrl = `ipfs://${cid}`;
+    const gatewayUrl = `https://${PINATA_GATEWAY_HOST}/ipfs/${cid}`;
+    console.log('[METADATA] Uploaded. cid:', cid, 'ipfs:', ipfsUrl, 'gateway:', gatewayUrl);
+
+    return res.json({ success: true, cid, ipfsUrl, gatewayUrl });
+
+  } catch (error) {
+    console.error('[METADATA] Error:', error);
+    res.status(500).json({ error: 'Internal server error', message: error.message });
+  }
 });
 
 // Fetch a user's generation history

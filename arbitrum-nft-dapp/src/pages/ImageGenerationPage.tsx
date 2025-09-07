@@ -26,7 +26,7 @@ export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isGenerateDisabled = !prompt.trim() || isGenerating;
+  const isGenerateDisabled = !prompt.trim() || selectedNFTs.length === 0 || isGenerating;
 
   const handleGenerateImage = async () => {
     if (isGenerateDisabled) return;
@@ -151,7 +151,7 @@ export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
         <div className="content-section">
           <div className="nft-selection">
             <h2>Your NFTs</h2>
-            <p>Choose which NFTs you want to use as inspiration for AI image generation</p>
+            <p>Choose at least one NFT to use as inspiration for AI image generation (required)</p>
             <NFTGallery 
               onSelectionChange={setSelectedNFTs}
               selectionMode={true}
@@ -206,7 +206,7 @@ export function ImageGenerationPage({ onBack }: ImageGenerationPageProps) {
             
             {selectedNFTs.length === 0 && (
               <p className="validation-message">
-                💡 Optional: Select NFTs to use as inspiration for your generated image
+                Please select at least one NFT to use as inspiration for your generated image
               </p>
             )}
           </div>

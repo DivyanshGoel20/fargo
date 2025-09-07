@@ -18,6 +18,14 @@ export function HomePage() {
       </Suspense>
     );
   }
+  if (currentPage === 'figurine') {
+    const Figurine = lazy(() => import('../pages/FigurineGenerationPage'));
+    return (
+      <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'white' }}>Loading Figurine Builder…</div>}>
+        <Figurine onBack={() => setCurrentPage('home')} />
+      </Suspense>
+    );
+  }
   
   if (currentPage === 'history') {
     return <HistoryPage onBack={() => setCurrentPage('home')} />;
@@ -50,6 +58,17 @@ export function HomePage() {
             <span>• Full-body</span>
             <span>• Quick Start</span>
             <span>• Export URL</span>
+          </div>
+        </div>
+
+        <div className="option-card image-card" onClick={() => setCurrentPage('figurine')}>
+          <div className="card-icon">🧸</div>
+          <h2>3D NFT Figurine</h2>
+          <p>Turn your NFT into a figurine-style image (fixed prompt)</p>
+          <div className="card-features">
+            <span>• Acrylic base</span>
+            <span>• Desk scene</span>
+            <span>• Packaging mock</span>
           </div>
         </div>
 
