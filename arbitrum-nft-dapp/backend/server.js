@@ -4,6 +4,7 @@ import axios from 'axios';
 import sharp from 'sharp';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import { PinataSDK } from 'pinata';
 
 dotenv.config();
 
@@ -15,9 +16,44 @@ const supabaseUrl = 'https://mamkdglgjohrnwzawree.supabase.co';
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Initialize Pinata client
+const pinata = new PinataSDK({
+  pinataJwt: process.env.PINATA_JWT,
+  pinataGateway: "coral-official-penguin-262.mypinata.cloud",
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Upload file to IPFS using Pinata
+async function uploadToIPFS(fileBuffer, fileName, mimeType) {
+  try {
+    console.log(`Uploading file to IPFS: ${fileName}`);
+    console.log(`File size: ${fileBuffer.length} bytes`);
+    console.log(`MIME type: ${mimeType}`);
+    
+    // Create a File object from the buffer
+    const file = new File([fileBuffer], fileName, { type: mimeType });
+    
+    // Upload to Pinata
+    const upload = await pinata.upload.public.file(file);
+    
+    console.log('IPFS upload successful:', upload);
+    console.log('IPFS Hash:', upload.IpfsHash);
+    console.log('IPFS URL:', `ipfs://${upload.IpfsHash}`);
+    
+    return {
+      success: true,
+      ipfsHash: upload.IpfsHash,
+      ipfsUrl: `ipfs://${upload.IpfsHash}`,
+      gatewayUrl: `https://coral-official-penguin-262.mypinata.cloud/ipfs/${upload.IpfsHash}`
+    };
+  } catch (error) {
+    console.error('Error uploading to IPFS:', error.message);
+    throw new Error(`Failed to upload to IPFS: ${error.message}`);
+  }
+}
 
 // Save generated image to database
 async function saveToDatabase(walletAddress, ipfsUrl, prompt) {
@@ -132,7 +168,8 @@ async function generateAIImage(prompt, imageBuffers) {
         return {
           success: true,
           message: 'Image generated successfully!',
-          generatedImage: dataUrl
+          generatedImage: dataUrl,
+          imageBuffer: buffer
         };
       }
     }
@@ -193,14 +230,27 @@ app.post('/api/generate-image', async (req, res) => {
     
     console.log('=== IMAGE GENERATION COMPLETED ===');
     
-    // For now, we'll use a placeholder IPFS URL since we haven't implemented IPFS upload yet
-    const placeholderIpfsUrl = `ipfs://placeholder_${Date.now()}`;
+    let ipfsResult = null;
+    let ipfsUrl = `ipfs://placeholder_${Date.now()}`;
+    
+    // Upload generated image to IPFS if we have image data
+    if (generationResult.imageBuffer) {
+      try {
+        console.log('Uploading generated image to IPFS...');
+        const fileName = `ai-generated-${Date.now()}.png`;
+        ipfsResult = await uploadToIPFS(generationResult.imageBuffer, fileName, 'image/png');
+        ipfsUrl = ipfsResult.ipfsUrl;
+        console.log('IPFS upload successful:', ipfsUrl);
+      } catch (ipfsError) {
+        console.warn('IPFS upload failed, using placeholder:', ipfsError.message);
+      }
+    }
     
     // Save to database
     try {
       await saveToDatabase(
         walletAddress, 
-        placeholderIpfsUrl, 
+        ipfsUrl, 
         prompt
       );
       console.log('Successfully saved to database');
@@ -213,7 +263,9 @@ app.post('/api/generate-image', async (req, res) => {
       message: generationResult.message,
       generatedImage: generationResult.generatedImage,
       processedImages: imageBuffers.length,
-      ipfsUrl: placeholderIpfsUrl,
+      ipfsUrl: ipfsUrl,
+      ipfsHash: ipfsResult?.ipfsHash || null,
+      gatewayUrl: ipfsResult?.gatewayUrl || null,
       savedToDatabase: true
     });
     
