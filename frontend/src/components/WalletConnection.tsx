@@ -1,9 +1,9 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
+// import { useAccount } from 'wagmi';
 import './WalletConnection.css';
 
 export function WalletConnection() {
-  const { address, isConnected, chain } = useAccount();
+  // const { address, isConnected, chain } = useAccount();
 
   return (
     <div className="wallet-section">
