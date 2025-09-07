@@ -8,13 +8,13 @@ export function WalletConnection() {
   return (
     <div className="wallet-section">
       <ConnectButton />
-      {isConnected && (
+      {/* {isConnected && (
         <div className="wallet-info">
           <p><strong>Connected:</strong> {address}</p>
           <p><strong>Network:</strong> {chain?.name || 'Unknown'}</p>
           <p><strong>Chain ID:</strong> {chain?.id}</p>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

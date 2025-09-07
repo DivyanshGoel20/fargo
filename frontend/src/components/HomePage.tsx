@@ -10,14 +10,6 @@ export function HomePage() {
     return <ImageGenerationPage onBack={() => setCurrentPage('home')} />;
   }
   
-  if (currentPage === 'avatar') {
-    const Creator = lazy(() => import('../pages/AvatarCreatorPage'));
-    return (
-      <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'white' }}>Loading Character Builder…</div>}>
-        <Creator onBack={() => setCurrentPage('home')} />
-      </Suspense>
-    );
-  }
   if (currentPage === 'figurine') {
     const Figurine = lazy(() => import('../pages/FigurineGenerationPage'));
     return (
@@ -33,12 +25,28 @@ export function HomePage() {
 
   return (
     <div className="homepage">
-      <div className="hero-section">
+      {/* <div className="hero-section">
         <h1>AI-Powered NFT Generator</h1>
-        <p>Transform your NFTs into AI-generated images and 3D characters</p>
-      </div>
+        <p>Transform your NFTs into stunning 3D figurines and AI-generated artwork</p>
+      </div> */}
       
-      <div className="options-grid">
+      <div className="main-feature">
+        <div className="featured-card figurine-card" onClick={() => setCurrentPage('figurine')}>
+          <div className="featured-badge">⭐ Featured</div>
+          <div className="card-icon">🧸</div>
+          <h2>3D NFT Figurines</h2>
+          <p>Transform your NFTs into premium 3D figurine-style images with professional lighting and presentation</p>
+          <div className="card-features">
+            <span>• Premium acrylic base</span>
+            <span>• Professional desk scene</span>
+            <span>• Packaging mockup</span>
+            <span>• Studio lighting</span>
+          </div>
+          <div className="cta-button">Create Figurine →</div>
+        </div>
+      </div>
+
+      <div className="secondary-options">
         <div className="option-card image-card" onClick={() => setCurrentPage('image')}>
           <div className="card-icon">🎨</div>
           <h2>AI Images</h2>
@@ -50,29 +58,7 @@ export function HomePage() {
           </div>
         </div>
 
-        <div className="option-card avatar-card" onClick={() => setCurrentPage('avatar')}>
-          <div className="card-icon">🧍</div>
-          <h2>3D Characters</h2>
-          <p>Create and export your Ready Player Me avatar</p>
-          <div className="card-features">
-            <span>• Full-body</span>
-            <span>• Quick Start</span>
-            <span>• Export URL</span>
-          </div>
-        </div>
-
-        <div className="option-card image-card" onClick={() => setCurrentPage('figurine')}>
-          <div className="card-icon">🧸</div>
-          <h2>3D NFT Figurine</h2>
-          <p>Turn your NFT into a figurine-style image (fixed prompt)</p>
-          <div className="card-features">
-            <span>• Acrylic base</span>
-            <span>• Desk scene</span>
-            <span>• Packaging mock</span>
-          </div>
-        </div>
-
-        <div className="option-card image-card" onClick={() => setCurrentPage('history')}>
+        <div className="option-card history-card" onClick={() => setCurrentPage('history')}>
           <div className="card-icon">🗂️</div>
           <h2>Recent Works</h2>
           <p>Browse your generated images and prompts</p>

@@ -18,8 +18,8 @@ function App() {
             <header className="App-header">
               <div className="header-content">
                 <div className="title-section">
-                  <h1>AI NFT Generator</h1>
-                  <p>Transform your NFTs with AI</p>
+                  <h1>Fargo</h1>
+                  <p>Turn Your Digital Collection into AI-Generated Masterpieces.</p>
                 </div>
                 <div className="wallet-section-header">
                   <WalletConnection />
