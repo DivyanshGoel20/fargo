@@ -65,7 +65,7 @@ export function HomePage() {
           <div className="card-features">
             <span>• View History</span>
             <span>• Open via Gateway</span>
-            <span>• Mint (soon)</span>
+            <span>• Mint</span>
           </div>
         </div>
       </div>
