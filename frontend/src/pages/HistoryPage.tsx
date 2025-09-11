@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
 import { arbitrum } from 'wagmi/chains';
+import { somniaTestnet } from '../wagmi';
 import { useAccount } from 'wagmi';
 import './GenerationPage.css';
 
@@ -105,11 +107,22 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
 
   const [open, setOpen] = useState(false);
+  const [targetChainId, setTargetChainId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadataUrl, setMetadataUrl] = useState<string | null>(null);
+
+  const handleOpenForChain = async (desiredChainId: number) => {
+    setTargetChainId(desiredChainId);
+    try {
+      if (chainId !== desiredChainId) {
+        await switchChain({ chainId: desiredChainId });
+      }
+    } catch {}
+    setOpen(true);
+  };
 
   const onMint = async () => {
     setLoading(true);
@@ -130,29 +143,36 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
       console.log('Metadata uploaded:', data);
       const uri = data.ipfsUrl || data.gatewayUrl;
       setMetadataUrl(uri);
-      if (chainId !== arbitrum.id) {
-        try { switchChain({ chainId: arbitrum.id }); } catch {}
-        // defer write until user switches manually; show hint
-        alert('Please switch to Arbitrum One to mint. Network switch requested.');
-      } else {
-        try {
-          writeContract({
-            abi: [
-              {
-                "inputs": [ { "internalType": "string", "name": "tokenURI", "type": "string" } ],
-                "name": "mintNFT",
-                "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ],
-                "stateMutability": "nonpayable",
-                "type": "function"
-              }
-            ],
-            address: '0x5411F7EB719EAA802b4c5F3265f6d4a545663E87',
-            functionName: 'mintNFT',
-            args: [uri]
-          });
-        } catch (e) {
-          console.error('Contract write failed:', e);
-        }
+      const effectiveChainId = targetChainId ?? chainId;
+      if (effectiveChainId == null) {
+        throw new Error('No target chain selected');
+      }
+      if (chainId !== effectiveChainId) {
+        try { await switchChain({ chainId: effectiveChainId }); } catch {}
+      }
+      const contractAddress = effectiveChainId === arbitrum.id
+        ? '0x5411F7EB719EAA802b4c5F3265f6d4a545663E87'
+        : effectiveChainId === somniaTestnet.id
+          ? '0xF4166229984c015a02F21c6FC2d1D114183035F0'
+          : undefined;
+      if (!contractAddress) throw new Error('Unsupported chain for minting');
+      try {
+        writeContract({
+          abi: [
+            {
+              "inputs": [ { "internalType": "string", "name": "tokenURI", "type": "string" } ],
+              "name": "mintNFT",
+              "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ],
+              "stateMutability": "nonpayable",
+              "type": "function"
+            }
+          ],
+          address: contractAddress as `0x${string}`,
+          functionName: 'mintNFT',
+          args: [uri]
+        });
+      } catch (e) {
+        console.error('Contract write failed:', e);
       }
       setLoading(false);
     } catch (e) {
@@ -163,13 +183,23 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
 
   return (
     <>
-      <button className="generate-button" style={{ width: 'auto' }} onClick={() => setOpen(true)}>
-        Mint NFT
-      </button>
-      {open && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 50 }}>
-          <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, padding: 20, width: 420, maxWidth: '90%' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="generate-button" style={{ width: 'auto' }} onClick={() => handleOpenForChain(arbitrum.id)}>
+          Mint on Arbitrum One
+        </button>
+        <button className="generate-button" style={{ width: 'auto', background: 'linear-gradient(90deg,#334155,#1e293b)' }} onClick={() => handleOpenForChain(somniaTestnet.id)}>
+          Mint on Somnia Testnet
+        </button>
+      </div>
+      {open && createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 999999 }}>
+          <div style={{ background: 'rgba(15,23,42,0.98)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, padding: 20, width: 420, maxWidth: '90%', zIndex: 1000000, boxShadow: '0 20px 50px rgba(0,0,0,0.6)' }}>
             <h3 style={{ color: 'white', marginBottom: 12 }}>Mint NFT</h3>
+            {targetChainId && (
+              <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8 }}>
+                Network: {targetChainId === arbitrum.id ? 'Arbitrum One' : targetChainId === somniaTestnet.id ? 'Somnia Testnet' : targetChainId}
+              </div>
+            )}
             <div style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 8 }}>Image</div>
             <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8, wordBreak: 'break-all' }}>{imageUrl}</div>
             <div style={{ color: '#cbd5e1', fontSize: 12, marginTop: 8 }}>Name</div>
@@ -191,7 +221,8 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
             {isConfirming && <div style={{ color: '#cbd5e1', marginTop: 8 }}>Transaction pending…</div>}
             {isConfirmed && <div style={{ color: '#34d399', marginTop: 8 }}>Mint confirmed!</div>}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
