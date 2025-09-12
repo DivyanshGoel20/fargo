@@ -18,11 +18,12 @@ Once your AI-generated image or 3D figurine is ready, you can mint it as a brand
 
 🏗️ Deployment
 
-The project is deployed on Arbitrum One.
+The project is deployed on Arbitrum One and Somnia Testnet.
 
 ✅ Contract Address for Minting:
 
-0x5411F7EB719EAA802b4c5F3265f6d4a545663E87
+Arbitrum One : 0x5411F7EB719EAA802b4c5F3265f6d4a545663E87
+Somnia Testnet : 0xF4166229984c015a02F21c6FC2d1D114183035F0
 
 🌱 Future Plans
 
