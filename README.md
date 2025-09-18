@@ -23,7 +23,8 @@ The project is deployed on Arbitrum One and Somnia Testnet.
 ✅ Contract Address for Minting:
 
 Arbitrum One : 0x5411F7EB719EAA802b4c5F3265f6d4a545663E87
-Somnia Testnet : 0xF4166229984c015a02F21c6FC2d1D114183035F0
+
+Somnia Mainnet : 0x5f9B3D55A780e2575509C84b38B0715E9c6bAC55
 
 🌱 Future Plans
 
