@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
 import { arbitrum } from 'wagmi/chains';
-import { somniaTestnet } from '../wagmi';
+import { somniaMainnet } from '../wagmi';
 import { useAccount } from 'wagmi';
 import './GenerationPage.css';
 
@@ -33,7 +33,7 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`https://fargo-jkcv.onrender.com/api/history/${address}`);
+        const res = await fetch(`http://fargo-new.onrender.com/api/history/${address}`);
         if (!res.ok) throw new Error('Failed to fetch history');
         const data = await res.json();
         setItems(data.items || []);
@@ -129,7 +129,7 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
     setError(null);
     setMetadataUrl(null);
     try {
-      const res = await fetch('https://fargo-jkcv.onrender.com/api/metadata', {
+      const res = await fetch('http://fargo-new.onrender.com/api/metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), description: description.trim(), image: imageUrl })
@@ -152,8 +152,8 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
       }
       const contractAddress = effectiveChainId === arbitrum.id
         ? '0x5411F7EB719EAA802b4c5F3265f6d4a545663E87'
-        : effectiveChainId === somniaTestnet.id
-          ? '0xF4166229984c015a02F21c6FC2d1D114183035F0'
+        : effectiveChainId === somniaMainnet.id
+          ? '0x5f9B3D55A780e2575509C84b38B0715E9c6bAC55'
           : undefined;
       if (!contractAddress) throw new Error('Unsupported chain for minting');
       try {
@@ -187,8 +187,8 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
         <button className="generate-button" style={{ width: 'auto' }} onClick={() => handleOpenForChain(arbitrum.id)}>
           Mint on Arbitrum One
         </button>
-        <button className="generate-button" style={{ width: 'auto', background: 'linear-gradient(90deg,#334155,#1e293b)' }} onClick={() => handleOpenForChain(somniaTestnet.id)}>
-          Mint on Somnia Testnet
+        <button className="generate-button" style={{ width: 'auto', background: 'linear-gradient(90deg,#334155,#1e293b)' }} onClick={() => handleOpenForChain(somniaMainnet.id)}>
+          Mint on Somnia Mainnet
         </button>
       </div>
       {open && createPortal(
@@ -197,7 +197,7 @@ function MintButton({ imageUrl }: { imageUrl: string }) {
             <h3 style={{ color: 'white', marginBottom: 12 }}>Mint NFT</h3>
             {targetChainId && (
               <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8 }}>
-                Network: {targetChainId === arbitrum.id ? 'Arbitrum One' : targetChainId === somniaTestnet.id ? 'Somnia Testnet' : targetChainId}
+                Network: {targetChainId === arbitrum.id ? 'Arbitrum One' : targetChainId === somniaMainnet.id ? 'Somnia Mainnet' : targetChainId}
               </div>
             )}
             <div style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 8 }}>Image</div>

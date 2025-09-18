@@ -138,7 +138,7 @@ async function convertImageToPNG(imageUrl) {
   }
 }
 
-// Generate AI image using Gemini API
+// Generate AI image using Google Imagen API
 async function generateAIImage(prompt, imageBuffers) {
   try {
     console.log('Starting AI image generation...');
@@ -174,13 +174,36 @@ async function generateAIImage(prompt, imageBuffers) {
     
     console.log('Sending request to Gemini API...');
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image-preview",
-      contents: contents
+      model: "gemini-2.0-flash-preview-image-generation",
+      contents: contents,
+      config: {
+        responseModalities: ['IMAGE', 'TEXT'],
+        numberOfImages: 1
+      }
     }); 
     
     console.log('AI image generation completed');
     
     // Process the response to extract the generated image
+    // Check for generatedImages array first (new format)
+    if (response.generatedImages && response.generatedImages.length > 0) {
+      console.log('Generated image data received');
+      const firstImage = response.generatedImages[0];
+      const imageBytes = firstImage.image.imageBytes;
+      const buffer = Buffer.from(imageBytes, "base64");
+      
+      // Convert to data URL for frontend display
+      const dataUrl = `data:image/png;base64,${imageBytes}`;
+      
+      return {
+        success: true,
+        message: 'Image generated successfully!',
+        generatedImage: dataUrl,
+        imageBuffer: buffer
+      };
+    }
+    
+    // Fallback to old format processing
     for (const part of response.candidates[0].content.parts) {
       if (part.text) {
         console.log('Generated text:', part.text);

@@ -43,7 +43,7 @@ export default function FigurineGenerationPage({ onBack }: FigurineGenerationPag
     try {
       const imageUrls = selectedNFTs.map(nft => nft.image_url);
       
-      const response = await fetch('https://fargo-jkcv.onrender.com/api/generate-image', {
+      const response = await fetch('http://fargo-new.onrender.com/api/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
